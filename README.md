@@ -1,4 +1,46 @@
 rsub
 ====
 
-Script which changes the timing of srt subtitle files
+Ruby script which changes the timing of srt (SubRip) subtitle files.
+
+Features:
+
+* time shift
+* change framerate (fps) from 23.976 to 25 and vice versa
+* processing srt files in batch
+
+SubRip text file format
+-----------------------
+SubRip (SubRip Text) files are named with the extension `.srt`, and contain formatted lines of plain text in groups separated by a blank line.
+Subtitles are numbered sequentially, starting at 1. The timecode format used is `hours:minutes:seconds,milliseconds` with time units fixed to two zero-padded digits and fractions fixed to three zero-padded digits (00:00:00,000).
+The fractional separator used is the comma. The subtitle separator, a blank line, is the double byte MS-DOS CR+LF pair, though the POSIX single byte linefeed is also well supported.
+
+**Subtitle file structure:**
+
+1. A numeric counter identifying each sequential subtitle
+2. The time that the subtitle should appear on the screen, followed by `-->` and the time it should disappear
+3. Subtitle text itself on one or more lines
+4. A blank line containing no text, indicating the end of this subtitle
+
+The same is repeated for the next subtitle.
+
+**Example:**
+
+    1
+    00:02:17,440 --> 00:02:20,375
+    Senator, we're making
+    our final approach into Coruscant.
+
+    2
+    00:02:20,476 --> 00:02:22,501
+    Very good, Lieutenant.
+
+License
+-------
+Copyright (c) 2014 Gabor Bata
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+The software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.
