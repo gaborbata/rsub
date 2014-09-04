@@ -38,6 +38,7 @@ class SrtEntry
     @order = order
     @start_time = SrtTime.new(start_time)
     @end_time = SrtTime.new(end_time)
+    # '<i>' and '</i>' will be removed as they are not supported by all players
     @text = text.gsub('<i>', '').gsub('</i>', '')
   end
 
@@ -112,39 +113,39 @@ class SrtFile
     entry_list = []
     buffer = []
     file = File.open("#{in_file_name}", "r:#{@encoding}")
-    file.each_line do |line|
-      begin
-        if line.chomp!.strip.empty? && !buffer.empty?
-          line.strip!
-          range = buffer[1].split(' --> ')
-          entry = SrtEntry.new(buffer[0], range[0], range[1], buffer[2..-1].join("\n"))
-          entry_list.push(entry)
-          buffer.clear
-        else
-          buffer.push(line) if line && !line.empty?
+    begin
+      file.each_line do |line|
+        entry_line = line.chomp.strip
+        if entry_line.empty? && !buffer.empty?
+          flush_buffer(entry_list, buffer)
+        elsif !entry_line.empty?
+          buffer.push(entry_line)
         end
-      rescue => error
-         warn "***** ERROR: File: #{in_file_name}\n"
-         trace = error.backtrace.join("\n")
-         warn "***** ERROR: #{error}\n#{trace}\nError occured at entry:\n#{buffer}\n"
-         buffer.clear
       end
+      flush_buffer(entry_list, buffer) if !buffer.empty?
+    rescue => error
+       warn "***** ERROR: in file: [#{in_file_name}] with entry: #{buffer}\n"
+       trace = error.backtrace.join("\n")
+       warn "Backtrace: #{error}\n#{trace}\n\n"
+       entry_list = []
     end
     puts "Done: #{entry_list.size} entries have been read."
     return entry_list
   end
 
   def write(entry_list, create_backup = false, recount = false)
-    backup if create_backup
-    puts "Writing subtitles to '#{@file_name}'..."
-    file = File.open(@file_name, "w:#{@encoding}")
-    counter = 0
-    entry_list.each do |entry|
-      counter += 1
-      file.print(entry.to_s(recount ? counter : nil))
+    if entry_list && !entry_list.empty?
+      backup if create_backup
+      puts "Writing subtitles to '#{@file_name}'..."
+      file = File.open(@file_name, "w:#{@encoding}")
+      counter = 0
+      entry_list.each do |entry|
+        counter += 1
+        file.print(entry.to_s(recount ? counter : nil))
+      end
+      file.close
+      puts "Done: #{counter} entries have been written."
     end
-    file.close
-    puts "Done: #{counter} entries have been written."
   end
 
   def backup
@@ -154,11 +155,18 @@ class SrtFile
       FileUtils.cp(@file_name, backup_name)
     end
   end
+
+  private
+
+  def flush_buffer(entry_list, buffer)
+    range = buffer[1].split(' --> ')
+    entry = SrtEntry.new(buffer[0], range[0], range[1], buffer[2..-1].join("\n"))
+    entry_list.push(entry)
+    buffer.clear
+  end
 end
 
-# ==========
-# Main prog.
-# ==========
+# Main
 USE_BACKUP_FILE_AS_INPUT = false
 CREATE_BACKUP_FILE = true
 RECOUNT_ORDER = true
@@ -168,10 +176,11 @@ if files.empty?
   puts "Could not found subtitle files in the current directory or its subdirectories."
 else
   puts "The following file(s) are going to be modified:\n#{files.join("\n")}\n\n"
-  print "The following commands can be used:\n" +
+
+  puts "The following commands can be used:\n" +
     "  fps23    : 25fps -> 23,976fps\n" +
     "  fps25    : 23.976fps -> 25fps\n" +
-    "  shift:X  : shift subtitles by X seconds\n\n" +
+    "  shift:N  : shift subtitles by N seconds\n\n" +
     "Examples:\n" +
     "  fps23,shift:5  : 25fps -> 23,976fps and shift subtitles by 5 seconds forward\n" +
     "  shift:-10.5    : shift subtitles by 10 seconds and 5 milliseconds backward\n\n"
