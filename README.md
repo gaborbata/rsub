@@ -35,6 +35,36 @@ The same is repeated for the next subtitle.
     00:02:20,476 --> 00:02:22,501
     Very good, Lieutenant.
 
+Usage
+-----
+
+    Usage: rsub.rb [options] file_path
+
+    Specific options:
+        -s, --shift N                    Shift subtitles by N seconds (float)
+        -f, --fps FPS                    Change frame rate (23, 25)
+                                         23: 25.000 fps -> 23,976 fps
+                                         25: 23.976 fps -> 25.000 fps
+        -b, --no-backup                  Do not create backup files
+        -u, --use-backup-as-input        Use backup files as input
+        -r, --no-recount                 Do not recount subtitle numbering
+        -e, --encoding ENCODING          Subtitle encoding (default: ISO-8859-2)
+        -h, --help                       Show this message
+
+**Examples:**
+
+Change frame rate from 25 fps to 23.976 fps and shift subtitles by 5 seconds forward:
+
+    rsub.rb -f 23 -s 5 example.srt
+
+Shift subtitles by 10 seconds and 5 milliseconds backward:
+
+    rsub.rb -s -10.5 example.srt
+
+Change frame rate from 23.976 fps to 25 fps for all subtitles recursively:
+
+    rsub.rb -f 25 **/*.srt
+
 License
 -------
 Copyright (c) 2014 Gabor Bata

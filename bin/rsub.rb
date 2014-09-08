@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'fileutils'
+require 'optparse'
 
 # Class for representing time
 class SrtTime
@@ -57,46 +58,6 @@ class SrtEntry
   end
 end
 
-# Class for representing a change command for a subtitle entry
-class SrtChangeCommand
-  FPS_25 = 25.0
-  FPS_23 = 23.976
-
-  def initialize(command)
-    if command == 'fps25'
-      @method = :multiply
-      @param = FPS_23 / FPS_25
-    elsif command == 'fps23'
-      @method = :multiply
-      @param = FPS_25 / FPS_23
-    elsif command.match(/shift:-?\d+(\.\d+){0,1}/)
-      @method = :shift
-      @param = Float(command.split(':')[1])
-    elsif command == 'rewrite'
-      @method = :shift
-      @param = 0.0
-    end
-  end
-
-  def execute(entry)
-    send(@method, entry) if @method
-  end
-
-  def valid?
-    !@method.nil?
-  end
-
-  private
-
-  def multiply(entry)
-    entry.multiply!(@param)
-  end
-
-  def shift(entry)
-    entry.shift!(@param)
-  end
-end
-
 # Class for reading/writing srt files
 class SrtFile
   BACKUP_EXTENSION = '.bak'
@@ -124,16 +85,17 @@ class SrtFile
       end
       flush_buffer(entry_list, buffer) if !buffer.empty?
     rescue => error
-       warn "***** ERROR: in file: [#{in_file_name}] with entry: #{buffer}\n"
+       warn "ERROR: in file: [#{in_file_name}] with entry: #{buffer}\n"
        trace = error.backtrace.join("\n")
        warn "Backtrace: #{error}\n#{trace}\n\n"
        entry_list = []
     end
+    file.close
     puts "Done: #{entry_list.size} entries have been read."
     return entry_list
   end
 
-  def write(entry_list, create_backup = false, recount = false)
+  def write(entry_list, create_backup = false, recount = true)
     if entry_list && !entry_list.empty?
       backup if create_backup
       puts "Writing subtitles to '#{@file_name}'..."
@@ -166,48 +128,123 @@ class SrtFile
   end
 end
 
-# Main
-USE_BACKUP_FILE_AS_INPUT = false
-CREATE_BACKUP_FILE = true
-RECOUNT_ORDER = true
+# Class for representing a change command for a subtitle entry
+class SrtChangeCommand
+  FPS_25 = 25.0
+  FPS_23 = 23.976
 
-files = Dir.glob('**/*.srt')
-if files.empty?
-  puts "Could not found subtitle files in the current directory or its subdirectories."
-else
-  puts "The following file(s) are going to be modified:\n#{files.join("\n")}\n\n"
-
-  puts "The following commands can be used:\n" +
-    "  fps23    : 25fps -> 23,976fps\n" +
-    "  fps25    : 23.976fps -> 25fps\n" +
-    "  shift:N  : shift subtitles by N seconds\n\n" +
-    "Examples:\n" +
-    "  fps23,shift:5  : 25fps -> 23,976fps and shift subtitles by 5 seconds forward\n" +
-    "  shift:-10.5    : shift subtitles by 10 seconds and 5 milliseconds backward\n\n"
-
-  print "Please enter command: "
-  input = STDIN.gets.chomp.split(',')
-
-  commands = []
-  input.each do |command|
-    cmd = SrtChangeCommand.new(command)
-    commands.push(cmd) if cmd.valid?
+  def initialize(command, argument)
+    case command
+    when :fps
+      case argument
+      when '23'
+        @method = :multiply!
+        @param = FPS_25 / FPS_23
+      when '25'
+        @method = :multiply!
+        @param = FPS_23 / FPS_25
+      end
+    when :shift
+      if argument
+        @method = :shift!
+        @param = argument
+      end
+    end
   end
 
-  if commands.empty?
-    puts "No commands are recognized, nothing to do..."
-  else
-    files.each do |file|
-      srt_file = SrtFile.new(file)
-      entry_list = srt_file.read(USE_BACKUP_FILE_AS_INPUT)
-      entry_list.each do |entry|
-        commands.each do |command|
-          command.execute(entry)
-        end
+  def execute(entry)
+    entry.send(@method, @param) if valid?
+  end
+
+  def valid?
+    !@method.nil?
+  end
+end
+
+# Parse command-line options
+def parse_options(args)
+  options = {}
+  options[:create_backup] = true
+  options[:use_backup_as_input] = false
+  options[:recount] = true
+  options[:encoding] = "ISO-8859-2"
+  begin
+    optparser = OptionParser.new do |opts|
+      opts.banner = "Usage: rsub.rb [options] file_path"
+      opts.separator ""
+      opts.separator "Specific options:"
+
+      opts.on("-s", "--shift N", Float, "Shift subtitles by N seconds (float)") do |seconds|
+        options[:shift] = seconds
       end
-      srt_file.write(entry_list, CREATE_BACKUP_FILE, RECOUNT_ORDER)
+
+      opts.on("-f", "--fps FPS", ["23", "25"], "Change frame rate (23, 25)", "23: 25.000 fps -> 23,976 fps", "25: 23.976 fps -> 25.000 fps") do |fps|
+        options[:fps] = fps
+      end
+
+      opts.on("-b", "--no-backup", "Do not create backup files") do
+        options[:create_backup] = false
+      end
+
+      opts.on("-u", "--use-backup-as-input", "Use backup files as input (if exist)") do
+        options[:use_backup_as_input] = true
+      end
+
+      opts.on("-r", "--no-recount", "Do not recount subtitle numbering") do
+        options[:recount] = false
+      end
+
+      opts.on("-e", "--encoding ENCODING", "Subtitle encoding (default: #{options[:encoding]})") do |encoding|
+        options[:encoding] = encoding
+      end
+
+      opts.on("-h", "--help", "Show this message") do
+        puts opts
+        exit
+      end
+    end
+    optparser.parse!
+
+    if args.empty?
+      puts "#{optparser.help}\n"
+      raise "missing file_path"
+    else
+      file_path = args[0]
+      # ensure file path ends with the '.srt' extension
+      options[:file_path] = "#{file_path}#{!file_path.downcase.end_with?('.srt') ? '.srt' : ''}"
+    end
+  rescue => error
+    warn "ERROR: #{error}"
+    exit
+  end
+  return options
+end
+
+def main(options)
+  files = Dir.glob(options[:file_path])
+  if files.empty?
+    warn "Could not found subtitle files on the given path: '#{options[:file_path]}'"
+  else
+    commands = []
+    [:fps, :shift].each do |command|
+      cmd = SrtChangeCommand.new(command, options[command])
+      commands.push(cmd) if cmd.valid?
+    end
+    if commands.empty?
+      warn "Nothing to change..."
+    else
+      files.each do |file|
+        srt_file = SrtFile.new(file, options[:encoding])
+        entry_list = srt_file.read(options[:use_backup_as_input])
+        entry_list.each do |entry|
+          commands.each do |command|
+            command.execute(entry)
+          end
+        end
+        srt_file.write(entry_list, options[:create_backup], options[:recount])
+      end
     end
   end
 end
 
-puts; print('Press ENTER to exit...'); STDIN.gets
+main(parse_options(ARGV))
