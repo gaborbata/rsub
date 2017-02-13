@@ -2,7 +2,7 @@
 
 # rsub.rb - Ruby script which changes the timing of srt (SubRip) subtitle files.
 #
-# Copyright (c) 2014 Gabor Bata
+# Copyright (c) 2014-2017 Gabor Bata
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation files
@@ -34,8 +34,13 @@ class SrtTime
   TIME_FORMAT = '%02d:%02d:%02d,%03d'
 
   def initialize(time_str)
-    h, m, s, ms = time_str.scan(TIME_PATTERN).flatten.map{ |i| Float(i) }
-    @value = (h * 60.0 + m) * 60.0 + s + ms / 1000.0
+    @value = -1.0
+    begin
+      h, m, s, ms = time_str.scan(TIME_PATTERN).flatten.map{ |i| Float(i) }
+      @value = (h * 60.0 + m) * 60.0 + s + ms / 1000.0
+    rescue
+       warn "ERROR: could not read time entry: #{time_str}"
+    end
   end
 
   def multiply!(factor)
@@ -44,6 +49,10 @@ class SrtTime
 
   def shift!(time)
     @value = @value + time
+  end
+
+  def valid?
+    @value >= 0.0
   end
 
   def to_s
@@ -75,6 +84,10 @@ class SrtEntry
   def shift!(time)
     @start_time.shift!(time)
     @end_time.shift!(time)
+  end
+
+  def valid?
+    @start_time.valid? && @end_time.valid?
   end
 
   def to_s(order = nil)
@@ -126,6 +139,7 @@ class SrtFile
       file = File.open(@file_name, "w:#{@encoding}")
       counter = 0
       entry_list.each do |entry|
+        next if !entry.valid?
         counter += 1
         file.print(entry.to_s(recount ? counter : nil))
       end
