@@ -33,4 +33,9 @@ class TestRsub < Test::Unit::TestCase
     assert_equal("1\n00:02:27,939 --> 00:02:30,875\nSenator, we're making\nour final approach into Coruscant.\n\n", @entry.to_s)
   end
 
+  def test_srt_negative_time_values
+    SrtChangeCommand.new(:shift, -1000.0).execute(@entry)
+    assert(!@entry.valid?)
+  end
+
 end
