@@ -1,7 +1,5 @@
-rsub
+rsub [![Build Status](https://travis-ci.org/gaborbata/rsub.svg?branch=master)](https://travis-ci.org/gaborbata/rsub)
 ====
-
-[![Build Status](https://travis-ci.org/gaborbata/rsub.svg?branch=master)](https://travis-ci.org/gaborbata/rsub)
 
 Ruby script which changes the timing of srt (SubRip) subtitle files.
 
