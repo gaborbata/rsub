@@ -65,6 +65,11 @@ Change frame rate from 23.976 fps to 25 fps for all subtitles recursively:
 
     rsub.rb -f 25 **/*.srt
 
+How to install
+--------------
+
+    gem install rsub
+
 License
 -------
 Copyright (c) 2014-2017 Gabor Bata
