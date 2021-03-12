@@ -61,7 +61,7 @@ Shift subtitles by 10 seconds and 5 milliseconds backward:
 
     rsub.rb -s -10.5 example.srt
 
-Change frame rate from 23.976 fps to 25 fps for all subtitles recursively (please note single-quotes):
+Change frame rate from 23.976 fps to 25 fps for all subtitles recursively (please note single quotes):
 
     rsub.rb -f 25 '**/*.srt'
 
