@@ -1,4 +1,4 @@
-rsub ![Run tests](https://github.com/gaborbata/rsub/workflows/Run%20tests/badge.svg)
+rsub
 ====
 
 Ruby script which changes the timing of srt (SubRip) subtitle files.
@@ -6,7 +6,7 @@ Ruby script which changes the timing of srt (SubRip) subtitle files.
 Features:
 
 * time shift
-* change framerate (fps) from 23.976 to 25 and vice versa
+* change framerate (fps)
 * processing srt files in batch
 
 SubRip text file format
@@ -44,6 +44,7 @@ Usage
         -s, --shift N                    Shift subtitles by N seconds (float)
         -f, --fps FPS                    Change frame rate (23, 25)
                                          23: 25.000 fps -> 23,976 fps
+                                         24: 23.976 fps -> 24.000 fps
                                          25: 23.976 fps -> 25.000 fps
         -b, --no-backup                  Do not create backup files
         -u, --use-backup-as-input        Use backup files as input
@@ -72,7 +73,7 @@ How to install
 
 License
 -------
-Copyright (c) 2014-2017 Gabor Bata
+Copyright (c) 2014-2026 Gabor Bata
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

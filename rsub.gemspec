@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'rsub'
-  s.version     = '1.0.1'
-  s.date        = '2020-09-15'
+  s.version     = '1.0.2'
+  s.date        = '2026-06-04'
   s.summary     = 'Script which changes the timing of srt (SubRip) subtitle files'
   s.authors     = ['Gabor Bata']
   s.homepage    = 'https://github.com/gaborbata/rsub'
