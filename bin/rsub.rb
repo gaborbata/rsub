@@ -170,6 +170,7 @@ end
 class SrtChangeCommand
   FPS_25 = 25.0
   FPS_23 = 23.976
+  FPS_24 = 24.0
 
   def initialize(command, argument)
     case command
@@ -178,6 +179,9 @@ class SrtChangeCommand
       when '23'
         @method = :multiply!
         @param = FPS_25 / FPS_23
+      when '24'
+        @method = :multiply!
+        @param = FPS_23 / FPS_24
       when '25'
         @method = :multiply!
         @param = FPS_23 / FPS_25
@@ -216,7 +220,7 @@ def parse_options(args)
         options[:shift] = seconds
       end
 
-      opts.on("-f", "--fps FPS", ["23", "25"], "Change frame rate (23, 25)", "23: 25.000 fps -> 23,976 fps", "25: 23.976 fps -> 25.000 fps") do |fps|
+      opts.on("-f", "--fps FPS", ["23", "24", "25"], "Change frame rate (23, 24, 25)", "23: 25.000 fps -> 23,976 fps", "24: 23.976 fps -> 24.000 fps", "25: 23.976 fps -> 25.000 fps") do |fps|
         options[:fps] = fps
       end
 
